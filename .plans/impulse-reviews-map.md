@@ -262,9 +262,9 @@ Vite + React client, Cloudflare Worker entry stub, D1 binding, vitest-pool-worke
 - Creates: how to run locally (`pnpm install`, `pnpm db:migrate:local`, `pnpm db:seed:local`, `pnpm dev`), test (`pnpm test`), and deploy (`wrangler d1 create impulse-map`, paste the returned id into `wrangler.jsonc` `database_id`, `pnpm db:migrate:remote`, `pnpm deploy`). Mentions that the map tiles come from OpenFreeMap with its attribution requirement, and that Impulse SF's location is the constant in `src/shared/config.ts`. Anchor string: must appear `pnpm db:migrate:local`.
 
 #### Automated verification
-- [ ] Types check under both tsconfigs: `pnpm typecheck`
-- [ ] All tests pass: `pnpm test`
-- [ ] Full production bundle builds: `pnpm build`
+- [x] Types check under both tsconfigs: `pnpm typecheck`
+- [x] All tests pass: `pnpm test`
+- [x] Full production bundle builds: `pnpm build`
 
 ---
 
@@ -341,6 +341,55 @@ Stop and report instead of proceeding if the work would touch one of these AND n
 - Added responsive-independent marker styling for the anchor, all place categories, selected/dimmed states, and picked location.
 - `pnpm typecheck` exited 0.
 - `pnpm build` exited 0.
+
+### Phase 5 implementation
+- Added the API client, places hook, App integration, responsive layout, and local/deploy documentation.
+- `pnpm typecheck` (exit 0)
+  ```text
+  $ tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.worker.json --noEmit
+  ```
+- `pnpm test` (exit 0)
+  ```text
+  $ vitest run
+
+   RUN  v4.1.11 /Users/kyeshmz/Documents/wholeearth/map-wt/phase-5
+
+
+   Test Files  2 passed (2)
+       Tests  9 passed (9)
+   Start at  15:54:02
+   Duration  1.66s (transform 717ms, setup 2.25s, import 23ms, tests 27ms, environment 0ms)
+  ```
+- `pnpm build` (exit 0)
+  ```text
+  $ vite build
+  vite v8.2.2 building impulse_map environment for production...
+  transforming...
+  ✓ 136 modules transformed.
+  rendering chunks...
+  computing gzip size...
+  dist/impulse_map/.vite/manifest.json    0.15 kB │ gzip: 0.11 kB
+  dist/impulse_map/wrangler.json          1.56 kB │ gzip: 0.76 kB
+  dist/impulse_map/index.js             225.21 kB │ gzip: 52.55 kB
+
+  ✓ built in 39ms
+  vite v8.2.2 building client environment for production...
+  transforming...
+  ✓ 35 modules transformed.
+  rendering chunks...
+  computing gzip size...
+  dist/client/.assetsignore                  0.02 kB
+  dist/client/index.html                     0.40 kB │ gzip:   0.27 kB
+  dist/client/assets/index-COYsKKkZ.css     87.09 kB │ gzip:  11.95 kB
+  dist/client/assets/index-DMkVys15.js   1,182.52 kB │ gzip: 320.73 kB
+
+  [plugin builtin:vite-reporter]
+  (!) Some chunks are larger than 500 kB after minification. Consider:
+  - Using dynamic import() to code-split the application
+  - Using rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+  - Adjust chunk size warning via build.chunkSizeWarningLimit.
+  ✓ built in 217ms
+  ```
 
 ---
 Section ownership: everything above `## Execution log` is written by the planner and is READ-ONLY to the implementer, except the `#### Automated verification` checkboxes, which the implementer ticks after running the command and pasting its output. `#### Manual verification` boxes are ticked only by a human. Omit any section entirely when it would be empty — never write "None."
