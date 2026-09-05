@@ -175,8 +175,8 @@ Vite + React client, Cloudflare Worker entry stub, D1 binding, vitest-pool-worke
 - Creates: styles for `.map-view` (fills its parent: `width: 100%; height: 100%; position: relative`), `.anchor-marker`, `.place-marker` (a small round pin, category-colored via `[data-category="..."]` selectors for all seven categories, `is-selected` scales it up and uses `--accent`, `is-dimmed` lowers opacity to about 0.35), and `.pick-marker`. Marker buttons reset default button chrome (`border: 0; padding: 0; background: none; cursor: pointer`).
 
 #### Automated verification
-- [ ] Types check under both tsconfigs: `pnpm typecheck`
-- [ ] Client bundles with maplibre and the CSS import: `pnpm build`
+- [x] Types check under both tsconfigs: `pnpm typecheck`
+- [x] Client bundles with maplibre and the CSS import: `pnpm build`
 
 ---
 
@@ -334,6 +334,11 @@ Stop and report instead of proceeding if the work would touch one of these AND n
 
   ✓ built in 549ms
   ```
+### Phase 3 implementer
+- Added `MapView` with OpenFreeMap/MapLibre setup, controls, attribution, place marker diffing, selection, visibility dimming, map picking, and StrictMode-safe cleanup.
+- Added responsive-independent marker styling for the anchor, all place categories, selected/dimmed states, and picked location.
+- `pnpm typecheck` exited 0.
+- `pnpm build` exited 0.
 
 ---
 Section ownership: everything above `## Execution log` is written by the planner and is READ-ONLY to the implementer, except the `#### Automated verification` checkboxes, which the implementer ticks after running the command and pasting its output. `#### Manual verification` boxes are ticked only by a human. Omit any section entirely when it would be empty — never write "None."
