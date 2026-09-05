@@ -1,0 +1,59 @@
+.map-view {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.anchor-marker,
+.pick-marker,
+.place-marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.anchor-marker {
+  width: 26px;
+  height: 26px;
+  background: var(--text);
+  border: 3px solid var(--bg);
+}
+
+.place-marker {
+  border: 2px solid var(--bg);
+  padding: 0;
+  background: #777;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.place-marker[data-category="food"] { background: #e76f51; }
+.place-marker[data-category="coffee"] { background: #8b5e3c; }
+.place-marker[data-category="bar"] { background: #9b5de5; }
+.place-marker[data-category="shop"] { background: #00a896; }
+.place-marker[data-category="park"] { background: #43aa8b; }
+.place-marker[data-category="art"] { background: #f15bb5; }
+.place-marker[data-category="other"] { background: #577590; }
+
+.place-marker.is-selected {
+  border-color: var(--accent);
+  transform: rotate(-45deg) scale(1.35);
+  z-index: 1;
+}
+
+.place-marker.is-dimmed {
+  opacity: 0.35;
+}
+
+.pick-marker {
+  background: var(--accent);
+  border: 3px solid var(--accent-soft);
+}
+
+.place-marker,
+.anchor-marker,
+.pick-marker {
+  transform-origin: center;
+}
