@@ -1,10 +1,8 @@
-/** Scaffold stub. Replaced in Phase 2 by the Hono API. */
-export default {
-  async fetch(request, env): Promise<Response> {
-    const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/")) {
-      return Response.json({ error: "Not found" }, { status: 404 });
-    }
-    return env.ASSETS.fetch(request);
-  },
-} satisfies ExportedHandler<Env>;
+import { Hono } from "hono";
+import { api } from "./api";
+
+const app = new Hono<{ Bindings: Env }>();
+app.route("/api", api);
+app.all("*", (c) => c.env.ASSETS.fetch(c.req.raw));
+
+export default app;

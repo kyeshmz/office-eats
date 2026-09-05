@@ -148,9 +148,9 @@ Vite + React client, Cloudflare Worker entry stub, D1 binding, vitest-pool-worke
   - `GET /api/nope` -> 404 `{ error: "Not found" }`
 
 #### Automated verification
-- [ ] Types check under both tsconfigs: `pnpm typecheck`
-- [ ] API tests pass against a migrated D1: `pnpm test`
-- [ ] Worker and client still bundle: `pnpm build`
+- [x] Types check under both tsconfigs: `pnpm typecheck`
+- [x] API tests pass against a migrated D1: `pnpm test`
+- [x] Worker and client still bundle: `pnpm build`
 
 ---
 
@@ -291,6 +291,49 @@ Stop and report instead of proceeding if the work would touch one of these AND n
 
 ## Execution log
 <Implementer appends here, newest last. Planner does not write in this section.>
+
+### Phase 2 implementation
+- `pnpm typecheck` (exit 0)
+  ```text
+  $ tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.worker.json --noEmit
+  ```
+- `pnpm test` (exit 0)
+  ```text
+  $ vitest run
+
+   RUN  v4.1.11 /Users/kyeshmz/Documents/wholeearth/map-wt/phase-2
+
+
+   Test Files  1 passed (1)
+       Tests  5 passed (5)
+     Start at  15:50:02
+     Duration  2.88s (transform 314ms, setup 777ms, import 9ms, tests 23ms, environment 0ms)
+  ```
+- `pnpm build` (exit 0)
+  ```text
+  $ vite build
+  vite v8.2.2 building impulse_map environment for production...
+  transforming...
+  ✓ 136 modules transformed.
+  rendering chunks...
+  computing gzip size...
+  dist/impulse_map/.vite/manifest.json    0.15 kB │ gzip:  0.11 kB
+  dist/impulse_map/wrangler.json          1.56 kB │ gzip:  0.76 kB
+  dist/impulse_map/index.js             225.21 kB │ gzip: 52.55 kB
+
+  ✓ built in 102ms
+  vite v8.2.2 building client environment for production...
+  transforming...
+  ✓ 17 modules transformed.
+  rendering chunks...
+  computing gzip size...
+  dist/client/.assetsignore                0.02 kB
+  dist/client/index.html                   0.40 kB │ gzip:  0.27 kB
+  dist/client/assets/index-DeGDyJXw.css    0.43 kB │ gzip:  0.30 kB
+  dist/client/assets/index-DQ0FfFvD.js   190.62 kB │ gzip: 60.09 kB
+
+  ✓ built in 549ms
+  ```
 
 ---
 Section ownership: everything above `## Execution log` is written by the planner and is READ-ONLY to the implementer, except the `#### Automated verification` checkboxes, which the implementer ticks after running the command and pasting its output. `#### Manual verification` boxes are ticked only by a human. Omit any section entirely when it would be empty — never write "None."
