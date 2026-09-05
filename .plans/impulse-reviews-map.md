@@ -222,9 +222,9 @@ Vite + React client, Cloudflare Worker entry stub, D1 binding, vitest-pool-worke
 - Creates: styles for `.sidebar` (`width: var(--sidebar-width); height: 100%; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--bg); overflow: hidden`), a scrollable body region, `.place-item` rows (full-width button, left-aligned, hover uses `--bg-muted`), `.category-badge` (small uppercase pill), form layout (labels above inputs, inputs full width), `.form-error` (uses `--accent`), and the primary button style (background `--accent`, white text, disabled state at 0.5 opacity).
 
 #### Automated verification
-- [ ] Types check under both tsconfigs: `pnpm typecheck`
-- [ ] Search helper unit tests pass: `pnpm test`
-- [ ] Client bundles: `pnpm build`
+- [x] Types check under both tsconfigs: `pnpm typecheck`
+- [x] Search helper unit tests pass: `pnpm test`
+- [x] Client bundles: `pnpm build`
 
 ---
 
@@ -290,7 +290,9 @@ Stop and report instead of proceeding if the work would touch one of these AND n
 ---
 
 ## Execution log
-<Implementer appends here, newest last. Planner does not write in this section.>
+### Phase 4 implementation
+- Added Sidebar, search, formatting, list/detail components, review/add forms, and CSS.
+- Verification: `pnpm typecheck`, `pnpm test`, and `pnpm build` all exited 0.
 
 ---
 Section ownership: everything above `## Execution log` is written by the planner and is READ-ONLY to the implementer, except the `#### Automated verification` checkboxes, which the implementer ticks after running the command and pasting its output. `#### Manual verification` boxes are ticked only by a human. Omit any section entirely when it would be empty — never write "None."
