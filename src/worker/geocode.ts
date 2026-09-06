@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { GEOCODE_LIMIT, IMPULSE_SF, SEARCH_BBOX } from "../shared/config";
 import { distanceMeters } from "../shared/geo";
-import type { GeocodeResult } from "../shared/types";
+import type { GeocodeResult, PlaceCategory } from "../shared/types";
 
 const PHOTON_ENDPOINT = "https://photon.komoot.io/api/";
 
@@ -22,6 +22,8 @@ const photonResponseSchema = z.object({
       postcode: z.string().optional(),
       osm_id: z.number().optional(),
       osm_type: z.string().optional(),
+      osm_key: z.string().optional(),
+      osm_value: z.string().optional(),
     }).loose(),
     geometry: z.object({
       coordinates: z.tuple([z.number(), z.number()]),
@@ -36,6 +38,40 @@ function formatAddress(properties: { housenumber?: string; street?: string; city
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
     .join(", ");
+}
+
+/**
+ * Best-guess place category from a feature's OSM tags. Returns null when the
+ * tags say nothing useful, so callers keep whatever category they already had
+ * instead of overwriting it with a shrug.
+ */
+export function inferPlaceCategory(osmKey?: string, osmValue?: string): PlaceCategory | null {
+  const key = osmKey?.trim().toLowerCase();
+  const value = osmValue?.trim().toLowerCase();
+  if (!key || !value) return null;
+
+  if (key === "shop") return "shop";
+  if (key === "craft" && value === "brewery") return "bar";
+
+  switch (key) {
+    case "amenity":
+      if (value === "restaurant" || value === "fast_food" || value === "food_court" || value === "ice_cream") return "food";
+      if (value === "cafe") return "coffee";
+      if (value === "bar" || value === "pub" || value === "biergarten" || value === "nightclub") return "bar";
+      if (value === "theatre" || value === "arts_centre" || value === "cinema") return "art";
+      return null;
+    case "leisure":
+      if (value === "park" || value === "playground" || value === "garden" || value === "nature_reserve" || value === "common") return "park";
+      return null;
+    case "tourism":
+      if (value === "museum" || value === "gallery" || value === "artwork" || value === "attraction" || value === "viewpoint") return "art";
+      return null;
+    case "natural":
+      if (value === "beach" || value === "wood" || value === "grassland") return "park";
+      return null;
+    default:
+      return null;
+  }
 }
 
 /**
@@ -80,6 +116,7 @@ export async function geocodePlaces(query: string): Promise<GeocodeResult[]> {
     if (seen.has(identity)) continue;
     seen.add(identity);
 
+    const category = inferPlaceCategory(feature.properties.osm_key, feature.properties.osm_value);
     results.push({
       id: identity,
       name,
@@ -87,6 +124,9 @@ export async function geocodePlaces(query: string): Promise<GeocodeResult[]> {
       lng,
       lat,
       distanceMeters: distanceMeters(IMPULSE_SF, { lng, lat }),
+      // Only attached when the tags actually say something, so the form keeps
+      // its current category for the rest.
+      ...(category ? { category } : {}),
     });
   }
 

@@ -201,6 +201,23 @@ describe("places API", () => {
     expect(requested.searchParams.get("q")).toBe("cafe");
   });
 
+  it("infers a place category from the geocoder tags", async () => {
+    const photon = {
+      features: [
+        { properties: { name: "Noodle Joint", osm_key: "amenity", osm_value: "restaurant", osm_id: 11, osm_type: "N" }, geometry: { coordinates: [-122.4011, 37.765] } },
+        { properties: { name: "Bean Room", osm_key: "amenity", osm_value: "cafe", osm_id: 12, osm_type: "N" }, geometry: { coordinates: [-122.402, 37.766] } },
+        { properties: { name: "Mystery Spot", osm_id: 13, osm_type: "N" }, geometry: { coordinates: [-122.403, 37.767] } },
+      ],
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(photon));
+
+    const results = await (await app.request("/api/geocode?q=food", {}, env)).json() as Array<{ name: string; category?: string }>;
+    const byName = new Map(results.map((r) => [r.name, r]));
+    expect(byName.get("Noodle Joint")?.category).toBe("food");
+    expect(byName.get("Bean Room")?.category).toBe("coffee");
+    expect(byName.get("Mystery Spot")).not.toHaveProperty("category");
+  });
+
   it("collapses one place returned under several tags into a single suggestion", async () => {
     // Photon emits a feature per matching tag, so a brewpub arrives twice with
     // the same OSM id and point. The form must offer it once.

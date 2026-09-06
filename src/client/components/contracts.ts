@@ -2,7 +2,7 @@
  * Prop contracts for the two top-level panels. App.tsx owns all state and passes it down;
  * MapView and Sidebar are built against these interfaces independently.
  */
-import type { LngLat, NewPlaceInput, NewReviewInput, Place, PlaceWithReviews } from "../../shared/types";
+import type { LngLat, NewPlaceInput, NewReviewInput, Place, PlaceCategory, PlaceWithReviews } from "../../shared/types";
 
 export interface MapViewProps {
   /** Every reviewed place, unfiltered. */
@@ -12,6 +12,8 @@ export interface MapViewProps {
   /** When true the map cursor is a crosshair and a click reports a location instead of selecting. */
   pickMode: boolean;
   pickedLocation: LngLat | null;
+  /** Category of the place being added, so the preview pin matches the form. */
+  pickedCategory: PlaceCategory | null;
   onPickLocation: (location: LngLat) => void;
 }
 
@@ -39,4 +41,6 @@ export interface SidebarProps {
   pickedLocation: LngLat | null;
   /** Reports a location the user chose (map click or picked suggestion); null clears the preview pin. */
   onPickLocation: (location: LngLat | null) => void;
+  /** Category of the place being added, so the preview pin matches the form. Null clears it. */
+  onPickedCategoryChange: (category: PlaceCategory | null) => void;
 }

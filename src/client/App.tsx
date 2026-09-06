@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { LngLat, NewPlaceInput, NewReviewInput, PlaceWithReviews } from "../shared/types";
+import type { LngLat, NewPlaceInput, NewReviewInput, PlaceCategory, PlaceWithReviews } from "../shared/types";
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { usePlaces } from "./hooks/usePlaces";
@@ -14,6 +14,7 @@ export default function App() {
   const [selectedPlaceError, setSelectedPlaceError] = useState<string | null>(null);
   const [pickMode, setPickMode] = useState(false);
   const [pickedLocation, setPickedLocation] = useState<LngLat | null>(null);
+  const [pickedCategory, setPickedCategory] = useState<PlaceCategory | null>(null);
   const selectionVersion = useRef(0);
   const mounted = useRef(true);
 
@@ -69,6 +70,7 @@ export default function App() {
     const created = await createPlace(input, password);
     await reload();
     setPickedLocation(null);
+    setPickedCategory(null);
     setPickMode(false);
     await selectPlace(created.id);
   }
@@ -76,6 +78,7 @@ export default function App() {
   function handlePickLocation(location: LngLat | null) {
     setPickedLocation(location);
     if (location) setPickMode(false);
+    else setPickedCategory(null);
   }
 
   return (
@@ -94,6 +97,7 @@ export default function App() {
         onPickModeChange={setPickMode}
         pickedLocation={pickedLocation}
         onPickLocation={handlePickLocation}
+        onPickedCategoryChange={setPickedCategory}
       />
       <div className="app-map">
         <MapView
@@ -102,6 +106,7 @@ export default function App() {
           onSelectPlace={selectPlace}
           pickMode={pickMode}
           pickedLocation={pickedLocation}
+          pickedCategory={pickedCategory}
           onPickLocation={handlePickLocation}
         />
       </div>

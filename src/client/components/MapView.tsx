@@ -17,6 +17,7 @@ export default function MapView({
   onSelectPlace,
   pickMode,
   pickedLocation,
+  pickedCategory,
   onPickLocation,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,10 +27,22 @@ export default function MapView({
   const pickModeRef = useRef(pickMode);
   const onSelectPlaceRef = useRef(onSelectPlace);
   const onPickLocationRef = useRef(onPickLocation);
+  const pickedCategoryRef = useRef(pickedCategory);
 
   pickModeRef.current = pickMode;
   onSelectPlaceRef.current = onSelectPlace;
   onPickLocationRef.current = onPickLocation;
+  pickedCategoryRef.current = pickedCategory;
+
+  /** Colors the preview pin like the form's category, so food looks like food. */
+  function stylePickMarker() {
+    const marker = pickMarkerRef.current;
+    if (!marker) return;
+    const element = marker.getElement();
+    const category = pickedCategoryRef.current;
+    if (category) element.dataset.category = category;
+    else delete element.dataset.category;
+  }
 
   useEffect(() => {
     const container = containerRef.current;
@@ -176,6 +189,7 @@ export default function MapView({
         .addTo(map);
     }
     pickMarkerRef.current.setLngLat([pickedLocation.lng, pickedLocation.lat]);
+    stylePickMarker();
     // A picked suggestion can be across town from the current view, so bring
     // the camera to the pin the user is being asked to verify.
     map.flyTo({
@@ -183,6 +197,12 @@ export default function MapView({
       zoom: Math.max(map.getZoom(), 15),
     });
   }, [pickedLocation]);
+
+  // The category can change after the pin is already on the map (inferred on
+  // pick, then adjusted in the dropdown), so restyle without moving the camera.
+  useEffect(() => {
+    stylePickMarker();
+  }, [pickedCategory]);
 
   return <div ref={containerRef} className="map-view" />;
 }

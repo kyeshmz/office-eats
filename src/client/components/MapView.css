@@ -80,6 +80,29 @@
   border: 3px solid var(--accent-soft);
 }
 
+/* The preview pin borrows the place pins' category colors, so the pin the
+   user is verifying already looks like what will land on the map. */
+.pick-marker[data-category="food"] .pick-marker__pin { background: #e76f51; }
+.pick-marker[data-category="coffee"] .pick-marker__pin { background: #8b5e3c; }
+.pick-marker[data-category="bar"] .pick-marker__pin { background: #9b5de5; }
+.pick-marker[data-category="shop"] .pick-marker__pin { background: #00a896; }
+.pick-marker[data-category="park"] .pick-marker__pin { background: #43aa8b; }
+.pick-marker[data-category="art"] .pick-marker__pin { background: #f15bb5; }
+.pick-marker[data-category="other"] .pick-marker__pin { background: #577590; }
+
+/* Food gets a glyph too, so it reads as food at a glance. The pin itself is
+   rotated -45deg, so the glyph counter-rotates to sit upright. */
+.pick-marker[data-category="food"] .pick-marker__pin::after {
+  content: "🍔";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  line-height: 1;
+  transform: rotate(45deg);
+}
+
 .anchor-marker {
   width: 42px;
   height: 42px;

@@ -89,6 +89,11 @@ export interface GeocodeResult {
   lat: number;
   /** Straight-line distance from IMPULSE_SF in meters, so nearer suggestions sort first. */
   distanceMeters: number;
+  /**
+   * Best-guess category inferred from the geocoder's OSM tags. Absent when the
+   * tags say nothing useful, so the form keeps whatever it already had.
+   */
+  category?: PlaceCategory;
 }
 
 export interface ApiError {
