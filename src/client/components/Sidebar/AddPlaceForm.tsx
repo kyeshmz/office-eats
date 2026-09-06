@@ -21,7 +21,6 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
   const [name, setName] = useState("");
   const [category, setCategory] = useState<PlaceCategory>("food");
   const [address, setAddress] = useState("");
-  const [description, setDescription] = useState("");
   const [location, setLocation] = useState<LngLat | null>(null);
   const [review, setReview] = useState<NewReviewInput>({ author: REVIEW_AUTHORS[0], rating: 5, body: "" });
   const [password, setPassword] = useState("");
@@ -114,7 +113,7 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
     setError(null);
     setSubmitting(true);
     try {
-      await onSubmit({ name: name.trim(), category, address: address.trim(), lng: location.lng, lat: location.lat, description: description.trim() || undefined, review: { ...review, body: review.body.trim() } }, password);
+      await onSubmit({ name: name.trim(), category, address: address.trim(), lng: location.lng, lat: location.lat, review: { ...review, body: review.body.trim() } }, password);
       onPickModeChange(false);
       onCancel();
     } catch (err) {
@@ -181,7 +180,6 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
 
       <label>Category<select value={category} onChange={(event) => setCategory(event.target.value as PlaceCategory)}>{PLACE_CATEGORIES.map((value) => <option value={value} key={value}>{value}</option>)}</select></label>
       <label>Address<input maxLength={200} value={address} onChange={(event) => setAddress(event.target.value)} /></label>
-      <label>Description<textarea maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
 
       <div className="location-block">
         <span className="location-status">

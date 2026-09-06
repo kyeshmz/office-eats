@@ -1,28 +1,23 @@
 import type { Place } from "../../../shared/types";
 import { googleMapsUrl } from "../../../shared/geo";
-import { filterPlaces } from "../../lib/search";
 import { formatDistance, formatRating } from "../../lib/format";
 
 interface PlaceListProps {
   places: Place[];
   placesLoading: boolean;
-  query: string;
   onSelectPlace: (placeId: string) => void;
 }
 
-export default function PlaceList({ places, placesLoading, query, onSelectPlace }: PlaceListProps) {
+export default function PlaceList({ places, placesLoading, onSelectPlace }: PlaceListProps) {
   if (placesLoading && places.length === 0) return <p className="empty-state">Loading places…</p>;
-  if (!placesLoading && places.length === 0) return <p className="empty-state">No places yet. Add the first one.</p>;
-
-  const filtered = filterPlaces(places, query);
-  if (filtered.length === 0) return <p className="empty-state">No places match “{query}”.</p>;
+  if (places.length === 0) return <p className="empty-state">No places yet. Add the first one.</p>;
 
   return (
     <div className="place-list">
       <p className="place-count">
-        {filtered.length === places.length ? `${places.length} places` : `${filtered.length} of ${places.length} places`}
+        {places.length} places
       </p>
-      {filtered.map((place) => (
+      {places.map((place) => (
         // The Google Maps link is a sibling of the button, never nested inside
         // it: an anchor within a button is invalid and swallows the click.
         <div className="place-item-row" key={place.id}>

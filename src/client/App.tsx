@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LngLat, NewPlaceInput, NewReviewInput, PlaceWithReviews } from "../shared/types";
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { usePlaces } from "./hooks/usePlaces";
 import { createPlace, createReview, fetchPlace, updateReview } from "./lib/api";
-import { filterPlaces } from "./lib/search";
 import "./App.css";
 
 export default function App() {
   const { places, loading: placesLoading, error: placesError, reload } = usePlaces();
-  const [query, setQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<PlaceWithReviews | null>(null);
   const [selectedPlaceLoading, setSelectedPlaceLoading] = useState(false);
@@ -18,10 +16,6 @@ export default function App() {
   const [pickedLocation, setPickedLocation] = useState<LngLat | null>(null);
   const selectionVersion = useRef(0);
   const mounted = useRef(true);
-  const visiblePlaceIds = useMemo(
-    () => new Set(filterPlaces(places, query).map((place) => place.id)),
-    [places, query],
-  );
 
   useEffect(() => {
     mounted.current = true;
@@ -85,8 +79,6 @@ export default function App() {
         places={places}
         placesLoading={placesLoading}
         placesError={placesError ?? selectedPlaceError}
-        query={query}
-        onQueryChange={setQuery}
         selectedPlace={selectedPlace}
         selectedPlaceLoading={selectedPlaceLoading}
         onSelectPlace={selectPlace}
@@ -100,7 +92,6 @@ export default function App() {
       <div className="app-map">
         <MapView
           places={places}
-          visiblePlaceIds={visiblePlaceIds}
           selectedPlaceId={selectedPlaceId}
           onSelectPlace={selectPlace}
           pickMode={pickMode}

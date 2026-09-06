@@ -12,7 +12,6 @@ const placeInput = {
   address: "1 Test Street",
   lng: -122.3975,
   lat: 37.7622,
-  description: "A test place",
   // A place is always added together with its first review.
   review: { author: "Kye", rating: 4, body: "Added with the place." },
 };

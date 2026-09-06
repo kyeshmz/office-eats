@@ -35,7 +35,6 @@ export interface Place {
   address: string;
   lng: number;
   lat: number;
-  description: string | null;
   /** ISO-8601 UTC timestamp */
   createdAt: string;
   /** Straight-line distance from IMPULSE_SF in meters, computed by the API. */
@@ -67,7 +66,6 @@ export interface NewPlaceInput {
   address: string;
   lng: number;
   lat: number;
-  description?: string;
   /**
    * The first review, written while adding the place. Places are added and
    * reviewed in one step, so every place starts with exactly one review.

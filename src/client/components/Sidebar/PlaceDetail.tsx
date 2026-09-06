@@ -26,7 +26,6 @@ export default function PlaceDetail({ selectedPlace, selectedPlaceLoading, onSel
     <h2>{selectedPlace.name}</h2><span className="category-badge">{selectedPlace.category}</span>
     <p className="muted">{selectedPlace.address}</p><p className="place-summary">{formatDistance(selectedPlace.distanceMeters)} · {formatRating(selectedPlace.avgRating)} ({selectedPlace.reviewCount} reviews)</p>
     <p><a className="maps-link maps-link-detail" href={googleMapsUrl(selectedPlace)} target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a></p>
-    {selectedPlace.description && <p>{selectedPlace.description}</p>}
 
     <section className="reviews">
       <h3>Reviews</h3>

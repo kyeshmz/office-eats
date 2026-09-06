@@ -2,8 +2,6 @@
 .sidebar-header { padding: 24px 20px 12px; }
 .sidebar-header h1, .place-detail h2, .sidebar-form h2 { margin: 0 0 4px; font-size: 1.35rem; }
 .sidebar-header p, .muted { color: var(--text-muted); margin: 0; }
-.search-bar { display: flex; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-.search-bar input { min-width: 0; flex: 1; border: 1px solid var(--border); border-radius: 4px; padding: 9px 10px; background: var(--bg-muted); }
 button { border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; background: var(--bg); cursor: pointer; }
 button:hover:not(:disabled) { background: var(--bg-muted); }
 .sidebar-body { min-height: 0; flex: 1; overflow-y: auto; padding: 16px 20px 28px; }
@@ -75,7 +73,6 @@ button:hover:not(:disabled) { background: var(--bg-muted); }
  */
 @media (max-width: 768px) {
   .sidebar-header { padding: 16px 16px 10px; }
-  .search-bar { padding: 10px 16px; }
   .sidebar-body { padding: 14px 16px 24px; }
 
   button { min-height: 44px; }
@@ -83,8 +80,7 @@ button:hover:not(:disabled) { background: var(--bg-muted); }
 
   .sidebar-form input:not([type="range"]),
   .sidebar-form select,
-  .sidebar-form textarea,
-  .search-bar input {
+  .sidebar-form textarea {
     font-size: 16px;
     padding: 11px 10px;
   }

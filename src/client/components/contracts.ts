@@ -7,8 +7,6 @@ import type { LngLat, NewPlaceInput, NewReviewInput, Place, PlaceWithReviews } f
 export interface MapViewProps {
   /** Every reviewed place, unfiltered. */
   places: Place[];
-  /** Places currently matching the sidebar search; markers for these are emphasized, others dimmed. */
-  visiblePlaceIds: ReadonlySet<string>;
   selectedPlaceId: string | null;
   onSelectPlace: (placeId: string | null) => void;
   /** When true the map cursor is a crosshair and a click reports a location instead of selecting. */
@@ -22,8 +20,6 @@ export interface SidebarProps {
   places: Place[];
   placesLoading: boolean;
   placesError: string | null;
-  query: string;
-  onQueryChange: (query: string) => void;
   selectedPlace: PlaceWithReviews | null;
   selectedPlaceLoading: boolean;
   onSelectPlace: (placeId: string | null) => void;

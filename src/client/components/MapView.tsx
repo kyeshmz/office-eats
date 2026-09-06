@@ -13,7 +13,6 @@ maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 export default function MapView({
   places,
-  visiblePlaceIds,
   selectedPlaceId,
   onSelectPlace,
   pickMode,
@@ -132,9 +131,8 @@ export default function MapView({
 
       const element = marker.getElement();
       element.classList.toggle("is-selected", selectedPlaceId === place.id);
-      element.classList.toggle("is-dimmed", !visiblePlaceIds.has(place.id));
     }
-  }, [places, selectedPlaceId, visiblePlaceIds]);
+  }, [places, selectedPlaceId]);
 
   useEffect(() => {
     const map = mapRef.current;
