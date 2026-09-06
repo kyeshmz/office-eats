@@ -3,7 +3,7 @@ import type { LngLat, NewPlaceInput, NewReviewInput, PlaceWithReviews } from "..
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { usePlaces } from "./hooks/usePlaces";
-import { createPlace, createReview, fetchPlace } from "./lib/api";
+import { createPlace, fetchPlace, updateReview } from "./lib/api";
 import { filterPlaces } from "./lib/search";
 import "./App.css";
 
@@ -13,6 +13,7 @@ export default function App() {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<PlaceWithReviews | null>(null);
   const [selectedPlaceLoading, setSelectedPlaceLoading] = useState(false);
+  const [selectedPlaceError, setSelectedPlaceError] = useState<string | null>(null);
   const [pickMode, setPickMode] = useState(false);
   const [pickedLocation, setPickedLocation] = useState<LngLat | null>(null);
   const selectionVersion = useRef(0);
@@ -33,6 +34,7 @@ export default function App() {
   async function selectPlace(placeId: string | null) {
     const version = ++selectionVersion.current;
     setSelectedPlaceId(placeId);
+    setSelectedPlaceError(null);
     if (placeId === null) {
       setSelectedPlace(null);
       setSelectedPlaceLoading(false);
@@ -44,23 +46,28 @@ export default function App() {
     try {
       const place = await fetchPlace(placeId);
       if (mounted.current && version === selectionVersion.current) setSelectedPlace(place);
+    } catch (error) {
+      if (mounted.current && version === selectionVersion.current) {
+        setSelectedPlaceError(error instanceof Error ? error.message : "Network error");
+      }
     } finally {
       if (mounted.current && version === selectionVersion.current) setSelectedPlaceLoading(false);
     }
   }
 
   async function refreshSelectedPlace(placeId: string) {
+    const version = selectionVersion.current;
     const place = await fetchPlace(placeId);
-    if (mounted.current && selectedPlaceId === placeId) setSelectedPlace(place);
+    if (mounted.current && version === selectionVersion.current) setSelectedPlace(place);
   }
 
-  async function submitReview(placeId: string, input: NewReviewInput) {
-    await createReview(placeId, input);
+  async function editReview(placeId: string, reviewId: string, input: NewReviewInput, password: string) {
+    await updateReview(placeId, reviewId, input, password);
     await Promise.all([reload(), refreshSelectedPlace(placeId)]);
   }
 
-  async function addPlace(input: NewPlaceInput) {
-    const created = await createPlace(input);
+  async function addPlace(input: NewPlaceInput, password: string) {
+    const created = await createPlace(input, password);
     await reload();
     setPickedLocation(null);
     setPickMode(false);
@@ -72,13 +79,13 @@ export default function App() {
       <Sidebar
         places={places}
         placesLoading={placesLoading}
-        placesError={placesError}
+        placesError={placesError ?? selectedPlaceError}
         query={query}
         onQueryChange={setQuery}
         selectedPlace={selectedPlace}
         selectedPlaceLoading={selectedPlaceLoading}
         onSelectPlace={selectPlace}
-        onSubmitReview={submitReview}
+        onUpdateReview={editReview}
         onAddPlace={addPlace}
         pickMode={pickMode}
         onPickModeChange={setPickMode}

@@ -27,10 +27,15 @@ export interface SidebarProps {
   selectedPlace: PlaceWithReviews | null;
   selectedPlaceLoading: boolean;
   onSelectPlace: (placeId: string | null) => void;
-  /** Resolves when the API accepted the review and the parent has refreshed state; rejects with an Error whose message is user-presentable. */
-  onSubmitReview: (placeId: string, input: NewReviewInput) => Promise<void>;
-  /** Same resolution/rejection semantics as onSubmitReview. */
-  onAddPlace: (input: NewPlaceInput) => Promise<void>;
+  /**
+   * Rewrites an existing review. Resolves once the API accepted it and the
+   * parent has refreshed state; rejects with an Error whose message is
+   * user-presentable. `password` is the shared posting password the user typed;
+   * only the Worker can judge it, so a wrong one surfaces here as a rejection.
+   */
+  onUpdateReview: (placeId: string, reviewId: string, input: NewReviewInput, password: string) => Promise<void>;
+  /** Adds a place together with its first review. Same semantics as onUpdateReview. */
+  onAddPlace: (input: NewPlaceInput, password: string) => Promise<void>;
   pickMode: boolean;
   onPickModeChange: (on: boolean) => void;
   pickedLocation: LngLat | null;

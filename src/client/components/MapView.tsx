@@ -1,9 +1,15 @@
 import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { DEFAULT_ZOOM, IMPULSE_SF, OPENFREEMAP_ATTRIBUTION, OPENFREEMAP_STYLE_URL } from "../../shared/config";
+// MapLibre resolves its worker chunk from `import.meta.url`, which breaks once
+// Vite bundles the library (dev pre-bundle and production build alike). Point it
+// at a worker Vite builds for us so vector tiles actually load.
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+import { DEFAULT_ZOOM, IMPULSE_SF, OPENFREEMAP_STYLE_URL } from "../../shared/config";
 import type { MapViewProps } from "./contracts";
 import "./MapView.css";
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 export default function MapView({
   places,
@@ -38,20 +44,32 @@ export default function MapView({
       attributionControl: false,
     });
     mapRef.current = map;
-    map.addControl(
-      new maplibregl.AttributionControl({
-        compact: false,
-        customAttribution: OPENFREEMAP_ATTRIBUTION,
-      }),
-    );
+    // The OpenFreeMap style already declares this attribution on its source, so
+    // passing it again as customAttribution printed the whole line twice. On a
+    // phone that wrapped to two rows and ate the bottom of the map.
+    map.addControl(new maplibregl.AttributionControl({ compact: true }));
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     const anchorElement = document.createElement("div");
     anchorElement.className = "anchor-marker";
     anchorElement.title = IMPULSE_SF.name;
+    anchorElement.setAttribute("role", "img");
+    anchorElement.setAttribute("aria-label", IMPULSE_SF.name);
+    anchorElement.innerHTML = `
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path d="M5 29h22M8 27V10l8-5 8 5v17M12 13h3v4h-3zm5 0h3v4h-3zM12 20h3v4h-3zm5 0h3v4h-3z" />
+      </svg>
+    `;
     new maplibregl.Marker({ element: anchorElement })
       .setLngLat([IMPULSE_SF.lng, IMPULSE_SF.lat])
       .addTo(map);
+
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(container);
+    map.once("load", () => {
+      map.resize();
+      map.setCenter([IMPULSE_SF.lng, IMPULSE_SF.lat]);
+    });
 
     map.on("click", (event: maplibregl.MapMouseEvent) => {
       if (pickModeRef.current) {
@@ -62,6 +80,7 @@ export default function MapView({
     });
 
     return () => {
+      resizeObserver.disconnect();
       placeMarkersRef.current.clear();
       pickMarkerRef.current = null;
       mapRef.current = null;
@@ -92,11 +111,20 @@ export default function MapView({
         element.dataset.category = place.category;
         element.title = place.name;
         element.setAttribute("aria-label", place.name);
+        // The pin shape lives on a child element. MapLibre writes its own
+        // positioning transform onto `element` every frame, so anything we set
+        // there would either be ignored or, if transitioned, make the marker
+        // drift behind the map.
+        const pin = document.createElement("span");
+        pin.className = "place-marker__pin";
+        element.append(pin);
         element.addEventListener("click", (event) => {
           event.stopPropagation();
           onSelectPlaceRef.current(place.id);
         });
-        marker = new maplibregl.Marker({ element }).setLngLat([place.lng, place.lat]).addTo(map);
+        marker = new maplibregl.Marker({ element, anchor: "bottom" })
+          .setLngLat([place.lng, place.lat])
+          .addTo(map);
         markers.set(place.id, marker);
       } else {
         marker.setLngLat([place.lng, place.lat]);
@@ -140,7 +168,14 @@ export default function MapView({
     if (!pickMarkerRef.current) {
       const element = document.createElement("div");
       element.className = "pick-marker";
-      pickMarkerRef.current = new maplibregl.Marker({ element }).addTo(map);
+      const pin = document.createElement("span");
+      pin.className = "pick-marker__pin";
+      element.append(pin);
+      // Position the marker before adding it: MapLibre reads the coordinate as
+      // soon as the marker joins the map, and throws if it has not been set.
+      pickMarkerRef.current = new maplibregl.Marker({ element, anchor: "bottom" })
+        .setLngLat([pickedLocation.lng, pickedLocation.lat])
+        .addTo(map);
     }
     pickMarkerRef.current.setLngLat([pickedLocation.lng, pickedLocation.lat]);
   }, [pickedLocation]);

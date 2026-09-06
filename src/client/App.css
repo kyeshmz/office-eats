@@ -1,7 +1,10 @@
 .app-layout {
   display: flex;
+  /* Dynamic viewport units so mobile browser chrome cannot crop the layout.
+     The vh line stays as a fallback for browsers without dvh. */
   height: 100vh;
-  width: 100vw;
+  height: 100dvh;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -13,16 +16,21 @@
 
 @media (max-width: 768px) {
   .app-layout {
+    /* Map on top, list and forms below, which is the order a thumb reaches. */
     flex-direction: column-reverse;
   }
 
   .app-layout > .sidebar {
     width: 100%;
-    height: 50vh;
+    /* The sidebar holds the forms, so it gets the larger share and scrolls. */
+    height: 58dvh;
     flex: none;
+    border-right: 0;
+    border-top: 1px solid var(--border);
   }
 
   .app-map {
+    flex: 1;
     min-height: 0;
   }
 }

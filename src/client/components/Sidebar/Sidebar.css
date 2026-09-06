@@ -8,7 +8,11 @@ button { border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px;
 button:hover:not(:disabled) { background: var(--bg-muted); }
 .sidebar-body { min-height: 0; flex: 1; overflow-y: auto; padding: 16px 20px 28px; }
 .place-count { color: var(--text-muted); font-size: .85rem; margin: 0 0 8px; }
-.place-item { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 13px 0; }
+.place-item-row { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); }
+.place-item { display: block; flex: 1; min-width: 0; text-align: left; border: 0; border-radius: 0; padding: 13px 0; }
+.maps-link { flex: none; color: var(--accent); font-size: .8rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.maps-link:hover, .maps-link:focus-visible { text-decoration: underline; }
+.maps-link-detail { font-size: .9rem; }
 .place-item-main, .place-item-meta { display: flex; align-items: center; gap: 8px; }
 .place-item-meta { color: var(--text-muted); font-size: .85rem; margin-top: 5px; }
 .category-badge { display: inline-block; width: fit-content; padding: 2px 7px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -21,14 +25,83 @@ button:hover:not(:disabled) { background: var(--bg-muted); }
 .reviews { margin-top: 24px; }
 .reviews h3, .sidebar-form h3 { margin: 0 0 10px; }
 .review { border-top: 1px solid var(--border); padding: 12px 0; }
-.review-date { color: var(--text-muted); float: right; font-size: .85rem; }
+.review > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.review-date { color: var(--text-muted); font-size: .85rem; white-space: nowrap; }
 .review p { margin: 5px 0 0; }
+/* Appended entries are separated by blank lines, so the breaks must survive. */
+.review-body { white-space: pre-wrap; }
+.link-button { margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.link-button:hover, .link-button:focus-visible { text-decoration: underline; }
 .stars { color: var(--accent); display: block; }
 .sidebar-form { display: grid; gap: 12px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px; }
-.sidebar-form label { display: grid; gap: 4px; font-weight: 600; }
-.sidebar-form input, .sidebar-form select, .sidebar-form textarea { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--bg); }
+.sidebar-form label, .sidebar-form .field { display: grid; gap: 4px; font-weight: 600; }
+.sidebar-form .field > label { font-weight: 600; }
+.sidebar-form input:not([type="range"]), .sidebar-form select, .sidebar-form textarea { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--bg); }
 .sidebar-form textarea { min-height: 90px; resize: vertical; }
 .form-error { color: var(--accent); }
-.location-block { display: grid; gap: 10px; padding: 12px; background: var(--bg-muted); }
+.location-block { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; background: var(--bg-muted); }
+.location-status { font-size: .85rem; }
+
+/* The list is positioned against this wrapper so it overlays the fields below
+   the name input instead of pushing them down while the user types. */
+.combobox { position: relative; display: grid; gap: 6px; }
+.combobox-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin: 4px 0 0; padding: 4px; list-style: none; max-height: 260px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgb(0 0 0 / 12%); }
+.combobox-list li { display: grid; gap: 2px; padding: 8px 9px; border-radius: 6px; cursor: pointer; }
+.combobox-list li.is-highlighted { background: var(--accent-soft); }
+.combobox-meta { color: var(--text-muted); font-size: .78rem; }
+.field-hint { margin: 0; color: var(--text-muted); font-size: .78rem; }
+.review-fieldset { display: grid; gap: 12px; margin: 0; border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+.review-fieldset legend { padding: 0 6px; font-weight: 700; }
+.form-error-inline { color: var(--accent); }
 .form-actions { display: flex; gap: 8px; }
 .form-actions button { flex: 1; }
+
+/*
+ * Star rating. A real range input lies transparent on top of the stars, so a
+ * drag or a tap anywhere along the strip moves it and the keyboard works
+ * natively. The stars underneath are decoration and are hidden from assistive
+ * technology, which reads the input instead.
+ */
+.star-rating { position: relative; display: inline-flex; width: fit-content; touch-action: none; }
+.star-rating-stars { display: flex; gap: 4px; font-size: 1.7rem; line-height: 1; color: var(--border); }
+.star-rating-stars .star.is-on { color: var(--accent); }
+.star-rating-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.star-rating:focus-within .star-rating-stars { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+/*
+ * Mobile. Three things matter here: controls big enough to hit with a thumb,
+ * a 16px font on text fields so iOS does not zoom the page when one is focused,
+ * and rows that wrap rather than overflow at narrow widths.
+ */
+@media (max-width: 768px) {
+  .sidebar-header { padding: 16px 16px 10px; }
+  .search-bar { padding: 10px 16px; }
+  .sidebar-body { padding: 14px 16px 24px; }
+
+  button { min-height: 44px; }
+  .link-button { min-height: 0; }
+
+  .sidebar-form input:not([type="range"]),
+  .sidebar-form select,
+  .sidebar-form textarea,
+  .search-bar input {
+    font-size: 16px;
+    padding: 11px 10px;
+  }
+
+  .place-item { padding: 15px 0; }
+  .place-item-row { gap: 8px; }
+
+  /* Location summary and its button stack instead of squeezing side by side. */
+  .location-block { flex-wrap: wrap; }
+  .location-block button { flex: 1 1 100%; }
+
+  .form-actions { flex-wrap: wrap; }
+  .form-actions button { flex: 1 1 140px; }
+
+  /* Bigger stars, and vertical padding so the strip clears the 44px touch
+     target guidance. The input is inset:0, so it grows with the padding. */
+  .star-rating-stars { font-size: 2.1rem; gap: 8px; padding: 8px 0; }
+  .combobox-list { max-height: 45dvh; }
+  .combobox-list li { padding: 11px 10px; }
+}

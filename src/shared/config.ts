@@ -8,6 +8,17 @@ export const IMPULSE_SF = {
 
 export const DEFAULT_ZOOM = 14.5;
 
+/**
+ * Bounding box the place search is confined to, as [west, south, east, north].
+ * Covers San Francisco and the surrounding bay, which is as far as "around
+ * Impulse SF" reasonably stretches. Without it the geocoder happily returns
+ * same-named streets on other continents.
+ */
+export const SEARCH_BBOX = [-122.65, 37.57, -122.15, 37.97] as const;
+
+/** Most suggestions to show for one search. */
+export const GEOCODE_LIMIT = 6;
+
 /** OpenFreeMap vector style. See https://openfreemap.org/quick_start/ */
 export const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 

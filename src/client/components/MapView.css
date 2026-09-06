@@ -4,56 +4,103 @@
   position: relative;
 }
 
-.anchor-marker,
-.pick-marker,
-.place-marker {
+/*
+ * MapLibre owns the `transform` of every marker element: it writes an inline
+ * positioning transform on each one on every animation frame. So these wrapper
+ * elements must never carry a `transform` or a `transform` transition of their
+ * own. A stylesheet transform is silently overridden by the inline one, and a
+ * transform transition makes each reposition animate, which leaves the markers
+ * sliding along behind the map as it pans. All shaping lives on the inner
+ * `__pin` element instead, which MapLibre does not touch.
+ */
+.place-marker,
+.pick-marker {
+  /* MapLibre positions markers as absolutely placed children of the canvas
+     container and relies on `top`/`left` being zero. Anything else drops the
+     marker into normal flow, and its flow offset then shifts the pin away from
+     the coordinate it is meant to mark. */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+/*
+ * The pin's square corner is its tip. Anchor that corner to the wrapper's
+ * bottom centre and rotate about the very same point, so the tip stays put
+ * whatever the rotation or scale. The markers use `anchor: "bottom"`, which
+ * places the wrapper's bottom centre on the coordinate, so the tip lands
+ * exactly on the place it marks.
+ */
+.place-marker__pin,
+.pick-marker__pin {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
   width: 20px;
   height: 20px;
   border-radius: 50% 50% 50% 0;
+  transform-origin: 0 100%;
   transform: rotate(-45deg);
   box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
 }
 
-.anchor-marker {
-  width: 26px;
-  height: 26px;
-  background: var(--text);
-  border: 3px solid var(--bg);
-}
-
 .place-marker {
-  border: 2px solid var(--bg);
-  padding: 0;
-  background: #777;
   cursor: pointer;
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition: opacity 120ms ease;
 }
 
-.place-marker[data-category="food"] { background: #e76f51; }
-.place-marker[data-category="coffee"] { background: #8b5e3c; }
-.place-marker[data-category="bar"] { background: #9b5de5; }
-.place-marker[data-category="shop"] { background: #00a896; }
-.place-marker[data-category="park"] { background: #43aa8b; }
-.place-marker[data-category="art"] { background: #f15bb5; }
-.place-marker[data-category="other"] { background: #577590; }
+.place-marker__pin {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.place-marker[data-category="food"] .place-marker__pin { background: #e76f51; }
+.place-marker[data-category="coffee"] .place-marker__pin { background: #8b5e3c; }
+.place-marker[data-category="bar"] .place-marker__pin { background: #9b5de5; }
+.place-marker[data-category="shop"] .place-marker__pin { background: #00a896; }
+.place-marker[data-category="park"] .place-marker__pin { background: #43aa8b; }
+.place-marker[data-category="art"] .place-marker__pin { background: #f15bb5; }
+.place-marker[data-category="other"] .place-marker__pin { background: #577590; }
 
 .place-marker.is-selected {
-  border-color: var(--accent);
-  transform: rotate(-45deg) scale(1.35);
   z-index: 1;
+}
+
+.place-marker.is-selected .place-marker__pin {
+  transform: rotate(-45deg) scale(1.35);
+  box-shadow: 0 0 0 3px var(--accent), 0 1px 4px rgb(0 0 0 / 35%);
 }
 
 .place-marker.is-dimmed {
   opacity: 0.35;
 }
 
-.pick-marker {
+.pick-marker__pin {
   background: var(--accent);
   border: 3px solid var(--accent-soft);
 }
 
-.place-marker,
-.anchor-marker,
-.pick-marker {
-  transform-origin: center;
+.anchor-marker {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
+}
+
+.anchor-marker svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: white;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }

@@ -1,10 +1,22 @@
-import type { ApiError, NewPlaceInput, NewReviewInput, Place, PlaceWithReviews, Review } from "../../shared/types";
+import type { ApiError, GeocodeResult, NewPlaceInput, NewReviewInput, Place, PlaceWithReviews, Review } from "../../shared/types";
+import { POST_PASSWORD_HEADER } from "../../shared/types";
+
+/**
+ * Headers for a write. The password is forwarded verbatim for the Worker to
+ * judge; nothing here can tell whether it is correct.
+ */
+function writeHeaders(password: string): HeadersInit {
+  return { "Content-Type": "application/json", [POST_PASSWORD_HEADER]: password };
+}
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, init);
-  } catch {
+  } catch (error) {
+    // A caller that cancelled its own request needs to tell that apart from a
+    // real failure, so let the abort through instead of relabelling it.
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new Error("Network error");
   }
 
@@ -29,18 +41,27 @@ export function fetchPlace(id: string): Promise<PlaceWithReviews> {
   return request<PlaceWithReviews>(`/api/places/${encodeURIComponent(id)}`);
 }
 
-export function createPlace(input: NewPlaceInput): Promise<Place> {
+/**
+ * Place suggestions for a partial name. Pass the AbortSignal of a superseded
+ * keystroke so a slow answer cannot overwrite a newer one.
+ */
+export function geocode(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
+  return request<GeocodeResult[]>(`/api/geocode?q=${encodeURIComponent(query)}`, { signal });
+}
+
+export function createPlace(input: NewPlaceInput, password: string): Promise<Place> {
   return request<Place>("/api/places", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: writeHeaders(password),
     body: JSON.stringify(input),
   });
 }
 
-export function createReview(placeId: string, input: NewReviewInput): Promise<Review> {
-  return request<Review>(`/api/places/${encodeURIComponent(placeId)}/reviews`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+/** Rewrites an existing review. Needs the posting password, same as writing one. */
+export function updateReview(placeId: string, reviewId: string, input: NewReviewInput, password: string): Promise<Review> {
+  return request<Review>(`/api/places/${encodeURIComponent(placeId)}/reviews/${encodeURIComponent(reviewId)}`, {
+    method: "PATCH",
+    headers: writeHeaders(password),
     body: JSON.stringify(input),
   });
 }

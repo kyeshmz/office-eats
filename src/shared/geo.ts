@@ -13,3 +13,19 @@ export function distanceMeters(a: LngLat, b: LngLat): number {
 
   return Math.round(2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(haversine)));
 }
+
+/**
+ * Link to this place on Google Maps, using the documented Maps URL scheme.
+ *
+ * The query is the name and address rather than the raw coordinates, so the
+ * link resolves to the real business listing with hours and directions instead
+ * of dropping an unlabelled pin. The coordinates ride along in `center` to keep
+ * the map on the right neighbourhood when the text is ambiguous.
+ */
+export function googleMapsUrl(place: { name: string; address: string; lng: number; lat: number }): string {
+  const url = new URL("https://www.google.com/maps/search/");
+  url.searchParams.set("api", "1");
+  url.searchParams.set("query", `${place.name}, ${place.address}`);
+  url.searchParams.set("center", `${place.lat},${place.lng}`);
+  return url.toString();
+}

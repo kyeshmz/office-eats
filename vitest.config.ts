@@ -9,8 +9,14 @@ export default defineConfig({
       return {
         wrangler: { configPath: "./wrangler.jsonc" },
         miniflare: {
-          // Test-only binding so ./test/setup.ts can apply migrations to the isolated D1.
-          bindings: { TEST_MIGRATIONS: migrations },
+          bindings: {
+            // Test-only binding so ./test/setup.ts can apply migrations to the isolated D1.
+            TEST_MIGRATIONS: migrations,
+            // The real password is a Worker secret and a gitignored .dev.vars entry,
+            // so tests supply their own. Tests read it back off env rather than
+            // hardcoding it, and so stay correct if this value changes.
+            POST_PASSWORD: "test-only-password",
+          },
         },
       };
     }),

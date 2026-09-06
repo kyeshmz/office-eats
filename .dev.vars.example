@@ -1,0 +1,5 @@
+# Copy to `.dev.vars` (gitignored) and fill in real values for local development.
+# In production these are set with `wrangler secret put <NAME>` instead.
+
+# Shared password required by every write endpoint (adding a place, posting a review).
+POST_PASSWORD=
