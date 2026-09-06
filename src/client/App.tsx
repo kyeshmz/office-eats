@@ -73,6 +73,11 @@ export default function App() {
     await selectPlace(created.id);
   }
 
+  function handlePickLocation(location: LngLat | null) {
+    setPickedLocation(location);
+    if (location) setPickMode(false);
+  }
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -88,6 +93,7 @@ export default function App() {
         pickMode={pickMode}
         onPickModeChange={setPickMode}
         pickedLocation={pickedLocation}
+        onPickLocation={handlePickLocation}
       />
       <div className="app-map">
         <MapView
@@ -96,10 +102,7 @@ export default function App() {
           onSelectPlace={selectPlace}
           pickMode={pickMode}
           pickedLocation={pickedLocation}
-          onPickLocation={(location) => {
-            setPickedLocation(location);
-            setPickMode(false);
-          }}
+          onPickLocation={handlePickLocation}
         />
       </div>
     </div>

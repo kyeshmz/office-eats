@@ -37,4 +37,6 @@ export interface SidebarProps {
   pickMode: boolean;
   onPickModeChange: (on: boolean) => void;
   pickedLocation: LngLat | null;
+  /** Reports a location the user chose (map click or picked suggestion); null clears the preview pin. */
+  onPickLocation: (location: LngLat | null) => void;
 }

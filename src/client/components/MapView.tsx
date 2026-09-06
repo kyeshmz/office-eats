@@ -176,6 +176,12 @@ export default function MapView({
         .addTo(map);
     }
     pickMarkerRef.current.setLngLat([pickedLocation.lng, pickedLocation.lat]);
+    // A picked suggestion can be across town from the current view, so bring
+    // the camera to the pin the user is being asked to verify.
+    map.flyTo({
+      center: [pickedLocation.lng, pickedLocation.lat],
+      zoom: Math.max(map.getZoom(), 15),
+    });
   }, [pickedLocation]);
 
   return <div ref={containerRef} className="map-view" />;

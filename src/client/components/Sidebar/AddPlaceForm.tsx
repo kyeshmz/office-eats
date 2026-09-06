@@ -12,12 +12,13 @@ interface AddPlaceFormProps {
   pickMode: boolean;
   onPickModeChange: SidebarProps["onPickModeChange"];
   pickedLocation: LngLat | null;
+  onPickLocation: SidebarProps["onPickLocation"];
 }
 
 /** How long typing must pause before the geocoder is asked. */
 const SEARCH_DEBOUNCE_MS = 250;
 
-export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeChange, pickedLocation }: AddPlaceFormProps) {
+export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeChange, pickedLocation, onPickLocation }: AddPlaceFormProps) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState<PlaceCategory>("food");
   const [address, setAddress] = useState("");
@@ -82,7 +83,11 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
     setChosenName(suggestion.name);
     setName(suggestion.name);
     if (suggestion.address) setAddress(suggestion.address);
-    setLocation({ lng: suggestion.lng, lat: suggestion.lat });
+    const suggestionLocation = { lng: suggestion.lng, lat: suggestion.lat };
+    setLocation(suggestionLocation);
+    // Show the suggestion's pin on the map so the user can verify it is the
+    // right place before submitting.
+    onPickLocation(suggestionLocation);
     setSuggestions([]);
     setSuggestionsOpen(false);
     setHighlighted(-1);
@@ -200,7 +205,7 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
 
       <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
       <div className="form-actions">
-        <button type="button" onClick={() => { onPickModeChange(false); onCancel(); }}>Cancel</button>
+        <button type="button" onClick={() => { onPickModeChange(false); onPickLocation(null); onCancel(); }}>Cancel</button>
         <button className="primary-button" type="submit" disabled={submitting || !name.trim() || !address.trim() || !location || !review.body.trim() || !password}>Add place</button>
       </div>
     </form>
