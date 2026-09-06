@@ -57,6 +57,19 @@ export function createPlace(input: NewPlaceInput, password: string): Promise<Pla
   });
 }
 
+/**
+ * Posts a review. If the chosen author already reviewed this place, the server
+ * appends to their existing review and replaces the rating, instead of adding a
+ * second review under the same name.
+ */
+export function createReview(placeId: string, input: NewReviewInput, password: string): Promise<Review> {
+  return request<Review>(`/api/places/${encodeURIComponent(placeId)}/reviews`, {
+    method: "POST",
+    headers: writeHeaders(password),
+    body: JSON.stringify(input),
+  });
+}
+
 /** Rewrites an existing review. Needs the posting password, same as writing one. */
 export function updateReview(placeId: string, reviewId: string, input: NewReviewInput, password: string): Promise<Review> {
   return request<Review>(`/api/places/${encodeURIComponent(placeId)}/reviews/${encodeURIComponent(reviewId)}`, {

@@ -1,79 +1,47 @@
-# Impulse Map
+# Office Eats
 
-A small places-and-reviews map for locations near Impulse SF. The client uses OpenFreeMap tiles and includes the required OpenFreeMap, OpenMapTiles, and OpenStreetMap attribution.
+A small map of the places worth walking to from the office, with reviews.
 
-## Local development
+Everything is measured from one anchor point, defined in `src/shared/config.ts`.
+Places are listed nearest-first, and each one links out to Google Maps for hours
+and directions. The map draws OpenFreeMap tiles and carries the required
+OpenFreeMap, OpenMapTiles and OpenStreetMap attribution.
 
-```sh
-pnpm install
-pnpm db:migrate:local
-pnpm db:seed:local
-pnpm dev
-```
-
-The Impulse SF location is defined in `src/shared/config.ts`.
+It runs as a Cloudflare Worker named `impulse-map`, backed by a D1 database of
+the same name. That name predates the repository and is what `wrangler.jsonc`
+and the database scripts refer to.
 
 ## Adding a place
 
-The Name field on the add-place form searches a geocoder as you type and offers
-matching places nearby. Choosing one fills in the address and the location, so
-coordinates are never typed by hand. Search is confined to `SEARCH_BBOX`
-(`src/shared/config.ts`) and suggestions are ordered nearest-first from Impulse
-SF. "Pick on map" remains available for anything the geocoder does not know.
+Type a name into the Name field and the form searches a geocoder as you go,
+offering matching places nearby. Choosing one fills in the name, the address and
+the location, so coordinates are never typed by hand. Suggestions are ordered
+nearest-first and confined to a bounding box around the city; without it the
+geocoder happily returns same-named streets on other continents. "Pick on map"
+is there for anything the geocoder does not know.
 
-Lookups go through the Worker at `/api/geocode`, which proxies the public
-[Photon](https://photon.komoot.io) geocoder. No API key is needed. Responses are
-edge-cached for an hour so repeated keystrokes do not hit it again.
+A place is added together with its first review. The form carries the author,
+the star rating and the text, and both rows are written in one batch, so a place
+is never stored without the review it was added with.
 
-## Posting
+## Reviewing
 
-Adding a place and leaving a review both require a shared password, checked in
-the Worker and never sent to the browser. It is a secret, so it appears nowhere
-in this repository.
+Anyone can review any place from its detail panel. Reviews may only be
+attributed to the names in `REVIEW_AUTHORS` (`src/shared/types.ts`), which the
+form offers as a dropdown and the API enforces.
 
-For production, upload it once:
+Each author has at most one review per place. Reviewing a place you have already
+reviewed adds your new text to your existing review and replaces the rating,
+rather than leaving two entries under one name. The form tells you before you
+submit. Any review can also be rewritten outright with its Edit button.
 
-```sh
-wrangler secret put POST_PASSWORD
-```
+## Passwords
 
-For local development, copy `.dev.vars.example` to `.dev.vars` and fill in the
-value. That file is gitignored, and `pnpm dev` picks it up automatically:
+Adding a place, reviewing one and editing a review all require a shared
+password. It is checked in the Worker and never sent to the browser, so the page
+cannot decide for itself whether a password is right. It is stored as a secret
+and appears nowhere in this repository.
 
-```sh
-cp .dev.vars.example .dev.vars
-```
+## Contributing
 
-Tests do not use either one. They bind their own password in `vitest.config.ts`
-and read it back off `env`, so the suite passes without any local secret.
-
-Reviews may only be attributed to the names in `REVIEW_AUTHORS`
-(`src/shared/types.ts`), which the form offers as a dropdown and the API
-enforces.
-
-A place is added together with its first review: the add-place form carries the
-author, star rating and text, and both rows are written in one batch, so a place
-is never stored without the review it was added with. There is no separate
-"leave a review" form. Existing reviews are changed with the Edit button on each
-one, which needs the same password.
-
-Each author has at most one review per place, guaranteed by a unique index in
-migration `0002`. The `POST /api/places/:id/reviews` endpoint remains, and
-posting there as an author who already has a review appends to it and updates
-the rating rather than adding a second entry.
-
-## Test
-
-```sh
-pnpm test
-```
-
-## Deploy
-
-Create the D1 database, put its returned id in `wrangler.jsonc` as `database_id`, then migrate and deploy:
-
-```sh
-wrangler d1 create impulse-map
-pnpm db:migrate:remote
-pnpm deploy
-```
+Setup, tests and deployment are in [CONTRIBUTING.md](CONTRIBUTING.md).

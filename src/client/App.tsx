@@ -3,7 +3,7 @@ import type { LngLat, NewPlaceInput, NewReviewInput, PlaceWithReviews } from "..
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { usePlaces } from "./hooks/usePlaces";
-import { createPlace, fetchPlace, updateReview } from "./lib/api";
+import { createPlace, createReview, fetchPlace, updateReview } from "./lib/api";
 import { filterPlaces } from "./lib/search";
 import "./App.css";
 
@@ -61,6 +61,11 @@ export default function App() {
     if (mounted.current && version === selectionVersion.current) setSelectedPlace(place);
   }
 
+  async function submitReview(placeId: string, input: NewReviewInput, password: string) {
+    await createReview(placeId, input, password);
+    await Promise.all([reload(), refreshSelectedPlace(placeId)]);
+  }
+
   async function editReview(placeId: string, reviewId: string, input: NewReviewInput, password: string) {
     await updateReview(placeId, reviewId, input, password);
     await Promise.all([reload(), refreshSelectedPlace(placeId)]);
@@ -85,6 +90,7 @@ export default function App() {
         selectedPlace={selectedPlace}
         selectedPlaceLoading={selectedPlaceLoading}
         onSelectPlace={selectPlace}
+        onSubmitReview={submitReview}
         onUpdateReview={editReview}
         onAddPlace={addPlace}
         pickMode={pickMode}

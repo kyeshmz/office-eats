@@ -9,14 +9,17 @@ interface PlaceDetailProps {
   selectedPlace: SidebarProps["selectedPlace"];
   selectedPlaceLoading: boolean;
   onSelectPlace: SidebarProps["onSelectPlace"];
+  onSubmitReview: SidebarProps["onSubmitReview"];
   onUpdateReview: SidebarProps["onUpdateReview"];
 }
 
-export default function PlaceDetail({ selectedPlace, selectedPlaceLoading, onSelectPlace, onUpdateReview }: PlaceDetailProps) {
+export default function PlaceDetail({ selectedPlace, selectedPlaceLoading, onSelectPlace, onSubmitReview, onUpdateReview }: PlaceDetailProps) {
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
 
   if (selectedPlaceLoading && !selectedPlace) return <p className="empty-state">Loading…</p>;
   if (!selectedPlace) return null;
+
+  const authorsWithReviews = new Set(selectedPlace.reviews.map((review) => review.author));
 
   return <div className="place-detail">
     <button type="button" className="back-button" onClick={() => { setEditingReviewId(null); onSelectPlace(null); }}>← All places</button>
@@ -61,5 +64,15 @@ export default function PlaceDetail({ selectedPlace, selectedPlaceLoading, onSel
       ))}
     </section>
 
+    {/* Hidden only while a review is being edited, so two forms never compete. */}
+    {editingReviewId === null && (
+      <ReviewForm
+        heading="Leave a review"
+        submitLabel="Submit review"
+        authorsWithReviews={authorsWithReviews}
+        clearOnSuccess
+        onSubmit={(input, password) => onSubmitReview(selectedPlace.id, input, password)}
+      />
+    )}
   </div>;
 }
