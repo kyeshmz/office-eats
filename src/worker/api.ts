@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono, type MiddlewareHandler } from "hono";
 import { getPlace, insertPlace, listPlaces, saveReview, updateReview } from "./db";
 import { geocodePlaces } from "./geocode";
+import { fetchOsmDetails } from "./osm";
 import { newPlaceSchema, newReviewSchema } from "./schemas";
 import { POST_PASSWORD_HEADER } from "../shared/types";
 
@@ -58,6 +59,26 @@ api.get("/geocode", async (c) => {
     return c.json(await geocodePlaces(query));
   } catch {
     return c.json({ error: "Place search is unavailable right now" }, 502);
+  }
+});
+
+/**
+ * Details and a wiki photo for one OSM object, looked up live. Read-only and
+ * unauthenticated like the other GETs; OSM ids are public either way. Used
+ * both by the place detail view (from the stored OSM link) and by the
+ * add-place form (from the picked suggestion, before anything is stored).
+ */
+api.get("/osm-details", async (c) => {
+  const osmType = c.req.query("osm_type");
+  const osmId = Number(c.req.query("osm_id"));
+  if ((osmType !== "N" && osmType !== "W" && osmType !== "R") || !Number.isInteger(osmId) || osmId <= 0) {
+    return c.json({ error: "Bad osm_type or osm_id" }, 400);
+  }
+
+  try {
+    return c.json(await fetchOsmDetails({ osmType, osmId }));
+  } catch {
+    return c.json({ error: "Place details are unavailable right now" }, 502);
   }
 });
 

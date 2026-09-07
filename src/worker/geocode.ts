@@ -109,7 +109,10 @@ export async function geocodePlaces(query: string): Promise<GeocodeResult[]> {
     if (!name) continue;
 
     const [lng, lat] = feature.geometry.coordinates;
-    const { osm_id: osmId, osm_type: osmType } = feature.properties;
+    const rawOsmType = feature.properties.osm_type;
+    const osmType: "N" | "W" | "R" | undefined =
+      rawOsmType === "N" || rawOsmType === "W" || rawOsmType === "R" ? rawOsmType : undefined;
+    const osmId = feature.properties.osm_id;
     const identity = osmId
       ? `${osmType ?? "N"}${osmId}`
       : `${name}@${lng.toFixed(6)},${lat.toFixed(6)}`;
@@ -124,8 +127,10 @@ export async function geocodePlaces(query: string): Promise<GeocodeResult[]> {
       lng,
       lat,
       distanceMeters: distanceMeters(IMPULSE_SF, { lng, lat }),
-      // Only attached when the tags actually say something, so the form keeps
-      // its current category for the rest.
+      // The OSM link travels with the suggestion so the form can store it and
+      // look up details later. The category is only attached when the tags
+      // actually say something, so the form keeps its current one otherwise.
+      ...(osmType && osmId ? { osmType, osmId } : {}),
       ...(category ? { category } : {}),
     });
   }

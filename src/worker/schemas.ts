@@ -21,6 +21,8 @@ export const newPlaceSchema = z.object({
   address: z.string().trim().min(1).max(200),
   lng: z.number().min(-180).max(180),
   lat: z.number().min(-90).max(90),
+  osmType: z.enum(["N", "W", "R"]).optional(),
+  osmId: z.number().int().positive().optional(),
   // A place is added and reviewed in one step, so the review is required.
   review: newReviewSchema,
 }) satisfies z.ZodType<NewPlaceInput>;

@@ -1,0 +1,2 @@
+ALTER TABLE places ADD COLUMN osm_type TEXT;
+ALTER TABLE places ADD COLUMN osm_id INTEGER;

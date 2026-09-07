@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SidebarProps } from "../contracts";
-import { toReviewAuthor } from "../../../shared/types";
+import { toReviewAuthor, type OsmDetails } from "../../../shared/types";
 import { googleMapsUrl } from "../../../shared/geo";
 import { formatDate, formatDistance, formatRating } from "../../lib/format";
+import { fetchOsmDetails } from "../../lib/api";
 import ReviewForm from "./ReviewForm";
 
 interface PlaceDetailProps {
@@ -15,6 +16,20 @@ interface PlaceDetailProps {
 
 export default function PlaceDetail({ selectedPlace, selectedPlaceLoading, onSelectPlace, onSubmitReview, onUpdateReview }: PlaceDetailProps) {
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [details, setDetails] = useState<OsmDetails | null>(null);
+
+  // OSM details follow the selected place. Places added before the OSM link
+  // was stored have none, and a failed lookup just hides the section.
+  useEffect(() => {
+    let cancelled = false;
+    setDetails(null);
+    if (selectedPlace?.osmType && selectedPlace?.osmId) {
+      fetchOsmDetails(selectedPlace.osmType, selectedPlace.osmId)
+        .then((found) => { if (!cancelled) setDetails(found); })
+        .catch(() => { /* leave the details section hidden */ });
+    }
+    return () => { cancelled = true; };
+  }, [selectedPlace?.id, selectedPlace?.osmType, selectedPlace?.osmId]);
 
   if (selectedPlaceLoading && !selectedPlace) return <p className="empty-state">Loading…</p>;
   if (!selectedPlace) return null;
@@ -26,6 +41,15 @@ export default function PlaceDetail({ selectedPlace, selectedPlaceLoading, onSel
     <h2>{selectedPlace.name}</h2><span className="category-badge">{selectedPlace.category}</span>
     <p className="muted">{selectedPlace.address}</p><p className="place-summary">{formatDistance(selectedPlace.distanceMeters)} · {formatRating(selectedPlace.avgRating)} ({selectedPlace.reviewCount} reviews)</p>
     <p><a className="maps-link maps-link-detail" href={googleMapsUrl(selectedPlace)} target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a></p>
+    {details?.photoUrl && <img className="place-photo" src={details.photoUrl} alt={`Photo of ${selectedPlace.name}`} loading="lazy" />}
+    {(details?.hours || details?.website || details?.phone || details?.cuisine) && (
+      <dl className="place-facts">
+        {details.hours && <><dt>Hours</dt><dd>{details.hours}</dd></>}
+        {details.cuisine && <><dt>Cuisine</dt><dd>{details.cuisine}</dd></>}
+        {details.phone && <><dt>Phone</dt><dd>{details.phone}</dd></>}
+        {details.website && <><dt>Website</dt><dd><a href={details.website} target="_blank" rel="noopener noreferrer">{details.website.replace(/^https?:\/\//, "")}</a></dd></>}
+      </dl>
+    )}
 
     <section className="reviews">
       <h3>Reviews</h3>

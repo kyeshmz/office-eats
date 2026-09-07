@@ -9,6 +9,8 @@ interface PlaceRow {
   address: string;
   lng: number;
   lat: number;
+  osm_type: string | null;
+  osm_id: number | null;
   created_at: string;
   review_count: number;
   avg_rating: number | null;
@@ -31,6 +33,8 @@ function placeFromRow(row: PlaceRow): Place {
     address: row.address,
     lng: row.lng,
     lat: row.lat,
+    osmType: row.osm_type,
+    osmId: row.osm_id,
     createdAt: row.created_at,
     distanceMeters: distanceMeters(IMPULSE_SF, { lng: row.lng, lat: row.lat }),
     reviewCount: row.review_count,
@@ -52,7 +56,7 @@ function reviewFromRow(row: ReviewRow): Review {
 const reviewColumns = "id, place_id, author, rating, body, created_at";
 
 const placeSelect = `
-  SELECT p.id, p.name, p.category, p.address, p.lng, p.lat, p.created_at,
+  SELECT p.id, p.name, p.category, p.address, p.lng, p.lat, p.osm_type, p.osm_id, p.created_at,
     COUNT(r.id) AS review_count, AVG(r.rating) AS avg_rating
   FROM places p LEFT JOIN reviews r ON r.place_id = p.id
 `;
@@ -83,8 +87,8 @@ export async function insertPlace(db: D1Database, input: NewPlaceInput): Promise
 
   await db.batch([
     db.prepare(
-      "INSERT INTO places (id, name, category, address, lng, lat, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    ).bind(id, place.name, place.category, place.address, place.lng, place.lat, createdAt),
+      "INSERT INTO places (id, name, category, address, lng, lat, osm_type, osm_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    ).bind(id, place.name, place.category, place.address, place.lng, place.lat, place.osmType ?? null, place.osmId ?? null, createdAt),
     db.prepare(
       "INSERT INTO reviews (id, place_id, author, rating, body, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     ).bind(crypto.randomUUID(), id, review.author, review.rating, review.body, createdAt),
@@ -93,6 +97,8 @@ export async function insertPlace(db: D1Database, input: NewPlaceInput): Promise
   return {
     id,
     ...place,
+    osmType: place.osmType ?? null,
+    osmId: place.osmId ?? null,
     createdAt,
     distanceMeters: distanceMeters(IMPULSE_SF, place),
     reviewCount: 1,

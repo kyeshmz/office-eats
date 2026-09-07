@@ -39,6 +39,9 @@ export interface Place {
   createdAt: string;
   /** Straight-line distance from IMPULSE_SF in meters, computed by the API. */
   distanceMeters: number;
+  /** OSM object behind this place, when it was added from a geocoder suggestion. */
+  osmType: string | null;
+  osmId: number | null;
   reviewCount: number;
   /** Mean of review ratings, null when reviewCount is 0. */
   avgRating: number | null;
@@ -66,6 +69,9 @@ export interface NewPlaceInput {
   address: string;
   lng: number;
   lat: number;
+  /** OSM object behind the picked suggestion, when there was one. */
+  osmType?: "N" | "W" | "R";
+  osmId?: number;
   /**
    * The first review, written while adding the place. Places are added and
    * reviewed in one step, so every place starts with exactly one review.
@@ -90,10 +96,25 @@ export interface GeocodeResult {
   /** Straight-line distance from IMPULSE_SF in meters, so nearer suggestions sort first. */
   distanceMeters: number;
   /**
+   * The OSM object behind this suggestion, when Photon knew it. Stored with
+   * the place so details and photos can be looked up later.
+   */
+  osmType?: "N" | "W" | "R";
+  osmId?: number;
+  /**
    * Best-guess category inferred from the geocoder's OSM tags. Absent when the
    * tags say nothing useful, so the form keeps whatever it already had.
    */
   category?: PlaceCategory;
+}
+
+/** Details and a photo for a place, looked up live from OSM and the wiki. Every field is optional: most objects only have some of them. */
+export interface OsmDetails {
+  hours?: string;
+  website?: string;
+  phone?: string;
+  cuisine?: string;
+  photoUrl?: string;
 }
 
 export interface ApiError {

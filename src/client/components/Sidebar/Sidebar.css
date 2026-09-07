@@ -39,6 +39,11 @@ button:hover:not(:disabled) { background: var(--bg-muted); }
 .form-error { color: var(--accent); }
 .location-block { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; background: var(--bg-muted); }
 .location-status { font-size: .85rem; }
+.preview-photo { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; }
+.place-photo { display: block; width: 100%; max-height: 280px; object-fit: cover; border-radius: 8px; margin-top: 12px; }
+.place-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0 0; }
+.place-facts dt { color: var(--text-muted); font-weight: 600; }
+.place-facts dd { margin: 0; overflow-wrap: anywhere; }
 
 /* The list is positioned against this wrapper so it overlays the fields below
    the name input instead of pushing them down while the user types. */

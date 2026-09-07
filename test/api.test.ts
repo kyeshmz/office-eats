@@ -218,6 +218,38 @@ describe("places API", () => {
     expect(byName.get("Mystery Spot")).not.toHaveProperty("category");
   });
 
+  it("looks up OSM tags and a wiki photo for a place", async () => {
+    const osm = { elements: [{ type: "node", id: 11, tags: { name: "Noodle Joint", opening_hours: "Mo-Su 11:00-22:00", website: "https://noodle.example", cuisine: "noodle;ramen", wikipedia: "en:Noodle Joint" } }] };
+    const wiki = { query: { pages: { "123": { pageid: 123, title: "Noodle Joint", thumbnail: { source: "https://upload.wikimedia.org/noodle.jpg", width: 800, height: 600 } } } } };
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json(osm))
+      .mockResolvedValueOnce(Response.json(wiki));
+
+    const response = await app.request("/api/osm-details?osm_type=N&osm_id=11", {}, env);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      hours: "Mo-Su 11:00-22:00",
+      website: "https://noodle.example",
+      cuisine: "noodle, ramen",
+      photoUrl: "https://upload.wikimedia.org/noodle.jpg",
+    });
+    expect(new URL(fetchSpy.mock.calls[0][0] as string).pathname).toContain("/node/11.json");
+  });
+
+  it("rejects bad OSM refs and degrades when OSM is down", async () => {
+    expect((await app.request("/api/osm-details?osm_type=X&osm_id=11", {}, env)).status).toBe(400);
+    expect((await app.request("/api/osm-details?osm_type=N&osm_id=0", {}, env)).status).toBe(400);
+
+    // Tags without a wiki link still return details, just no photo.
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json({ elements: [{ tags: { phone: "+1 415-555-0100" } }] }));
+    expect(await (await app.request("/api/osm-details?osm_type=W&osm_id=22", {}, env)).json()).toEqual({ phone: "+1 415-555-0100" });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("down", { status: 503 }));
+    const failed = await app.request("/api/osm-details?osm_type=N&osm_id=11", {}, env);
+    expect(failed.status).toBe(502);
+    expect(await json(failed)).toEqual({ error: "Place details are unavailable right now" });
+  });
+
   it("collapses one place returned under several tags into a single suggestion", async () => {
     // Photon emits a feature per matching tag, so a brewpub arrives twice with
     // the same OSM id and point. The form must offer it once.

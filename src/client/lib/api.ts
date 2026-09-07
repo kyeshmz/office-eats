@@ -1,4 +1,4 @@
-import type { ApiError, GeocodeResult, NewPlaceInput, NewReviewInput, Place, PlaceWithReviews, Review } from "../../shared/types";
+import type { ApiError, GeocodeResult, NewPlaceInput, NewReviewInput, OsmDetails, Place, PlaceWithReviews, Review } from "../../shared/types";
 import { POST_PASSWORD_HEADER } from "../../shared/types";
 
 /**
@@ -47,6 +47,15 @@ export function fetchPlace(id: string): Promise<PlaceWithReviews> {
  */
 export function geocode(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
   return request<GeocodeResult[]>(`/api/geocode?q=${encodeURIComponent(query)}`, { signal });
+}
+
+/**
+ * Details and a wiki photo for one OSM object. Resolves to an empty object
+ * when the object has none of the tags we show; rejects when the lookup
+ * itself failed, which callers treat as "no details section".
+ */
+export function fetchOsmDetails(osmType: string, osmId: number, signal?: AbortSignal): Promise<OsmDetails> {
+  return request<OsmDetails>(`/api/osm-details?osm_type=${encodeURIComponent(osmType)}&osm_id=${osmId}`, { signal });
 }
 
 export function createPlace(input: NewPlaceInput, password: string): Promise<Place> {

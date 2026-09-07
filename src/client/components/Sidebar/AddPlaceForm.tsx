@@ -1,8 +1,8 @@
-import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { GeocodeResult, LngLat, NewReviewInput, PlaceCategory } from "../../../shared/types";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import type { GeocodeResult, LngLat, NewReviewInput, OsmDetails, PlaceCategory } from "../../../shared/types";
 import { PLACE_CATEGORIES, REVIEW_AUTHORS } from "../../../shared/types";
 import ReviewFields from "./ReviewFields";
-import { geocode } from "../../lib/api";
+import { fetchOsmDetails, geocode } from "../../lib/api";
 import { formatDistance } from "../../lib/format";
 import type { SidebarProps } from "../contracts";
 
@@ -41,10 +41,29 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
   const [chosenName, setChosenName] = useState<string | null>(null);
   // Whether that same suggestion also set the category, so the hint can say so.
   const [chosenCategory, setChosenCategory] = useState<PlaceCategory | null>(null);
+  // The OSM object behind the picked suggestion, stored with the place so the
+  // detail view can look up tags and a photo later.
+  const [osmRef, setOsmRef] = useState<{ osmType: "N" | "W" | "R"; osmId: number } | null>(null);
+  // Details preview for the picked suggestion, so the photo and hours help
+  // confirm it is the right place before submitting.
+  const [detailsPreview, setDetailsPreview] = useState<OsmDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const detailsReq = useRef(0);
   const listboxId = useId();
 
+  const locationRef = useRef(location);
+  locationRef.current = location;
+
   useEffect(() => {
-    if (pickedLocation) setLocation(pickedLocation);
+    if (!pickedLocation) return;
+    const prev = locationRef.current;
+    // A suggestion pick already set the same coordinates, so there is nothing
+    // to sync. A map click is a custom location: it takes over and drops the
+    // suggestion's OSM link and details preview with it.
+    if (prev && prev.lng === pickedLocation.lng && prev.lat === pickedLocation.lat) return;
+    setLocation(pickedLocation);
+    setOsmRef(null);
+    setDetailsPreview(null);
   }, [pickedLocation]);
 
   useEffect(() => {
@@ -97,10 +116,31 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
     // right place before submitting.
     onPickLocation(suggestionLocation);
     onPickedCategoryChange(suggestionCategory);
+    if (suggestion.osmType && suggestion.osmId) {
+      setOsmRef({ osmType: suggestion.osmType, osmId: suggestion.osmId });
+      void loadDetailsPreview(suggestion.osmType, suggestion.osmId);
+    } else {
+      setOsmRef(null);
+      setDetailsPreview(null);
+    }
     setSuggestions([]);
     setSuggestionsOpen(false);
     setHighlighted(-1);
     onPickModeChange(false);
+  }
+
+  /** Fetches the details preview for a picked suggestion; stale picks lose. */
+  async function loadDetailsPreview(osmType: "N" | "W" | "R", osmId: number) {
+    const req = ++detailsReq.current;
+    setDetailsLoading(true);
+    try {
+      const found = await fetchOsmDetails(osmType, osmId);
+      if (detailsReq.current === req) setDetailsPreview(found);
+    } catch {
+      if (detailsReq.current === req) setDetailsPreview(null);
+    } finally {
+      if (detailsReq.current === req) setDetailsLoading(false);
+    }
   }
 
   function handleNameKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -127,7 +167,7 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
     setError(null);
     setSubmitting(true);
     try {
-      await onSubmit({ name: name.trim(), category, address: address.trim(), lng: location.lng, lat: location.lat, review: { ...review, body: review.body.trim() } }, password);
+      await onSubmit({ name: name.trim(), category, address: address.trim(), lng: location.lng, lat: location.lat, ...(osmRef ? { osmType: osmRef.osmType, osmId: osmRef.osmId } : {}), review: { ...review, body: review.body.trim() } }, password);
       onPickModeChange(false);
       onCancel();
     } catch (err) {
@@ -208,6 +248,9 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
           {pickMode ? "Picking… click the map" : location ? "Adjust on map" : "Pick on map"}
         </button>
       </div>
+      {detailsLoading && <p className="field-hint">Looking up place details…</p>}
+      {detailsPreview?.photoUrl && <img className="preview-photo" src={detailsPreview.photoUrl} alt={name.trim() ? `Photo of ${name.trim()}` : "Photo of the picked place"} loading="lazy" />}
+      {detailsPreview?.hours && <p className="field-hint">Hours: {detailsPreview.hours}</p>}
 
       <fieldset className="review-fieldset">
         <legend>Your review</legend>
