@@ -1,10 +1,10 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono, type MiddlewareHandler } from "hono";
-import { getPlace, insertPlace, listPlaces, saveReview, updateReview } from "./db";
+import { getPlace, insertPlace, isTrustedDevice, listPlaces, saveReview, touchTrustedDevice, trustDevice, updateReview } from "./db";
 import { geocodePlaces } from "./geocode";
 import { fetchOsmDetails } from "./osm";
 import { newPlaceSchema, newReviewSchema } from "./schemas";
-import { POST_PASSWORD_HEADER } from "../shared/types";
+import { DEVICE_TOKEN_HEADER, POST_PASSWORD_HEADER } from "../shared/types";
 
 export const api = new Hono<{ Bindings: Env }>();
 
@@ -23,13 +23,29 @@ function secureEquals(a: string, b: string): boolean {
  * Gate on every write route. The expected password lives only in the Worker's
  * POST_PASSWORD binding and is never sent to the browser, so the client cannot
  * decide for itself whether a password is right.
+ *
+ * A browser cannot reveal its MAC address, so the client sends a random
+ * per-browser device id instead. The first time a device presents the correct
+ * password its id is remembered; afterwards that id alone authorises writes,
+ * so a known device is never asked for the password again.
  */
 const requirePassword: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
   const expected = c.env.POST_PASSWORD;
   if (!expected) return c.json({ error: "Posting is disabled: no password is configured" }, 503);
   const supplied = c.req.header(POST_PASSWORD_HEADER) ?? "";
-  if (!secureEquals(supplied, expected)) return c.json({ error: "Incorrect password" }, 401);
-  await next();
+  if (secureEquals(supplied, expected)) {
+    const deviceId = (c.req.header(DEVICE_TOKEN_HEADER) ?? "").trim();
+    if (deviceId) await trustDevice(c.env.DB, deviceId);
+    await next();
+    return;
+  }
+  const deviceId = (c.req.header(DEVICE_TOKEN_HEADER) ?? "").trim();
+  if (deviceId && (await isTrustedDevice(c.env.DB, deviceId))) {
+    await touchTrustedDevice(c.env.DB, deviceId);
+    await next();
+    return;
+  }
+  return c.json({ error: "Incorrect password" }, 401);
 };
 
 function validationError(result: { error: { issues: Array<{ path: PropertyKey[]; message: string }> } }, c: { json: (body: { error: string }, status: 400) => Response }): Response {

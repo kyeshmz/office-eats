@@ -53,6 +53,41 @@ function reviewFromRow(row: ReviewRow): Review {
   };
 }
 
+/**
+ * Device ids stand in for MAC addresses, which browsers never expose. They are
+ * random per-browser tokens: only an id previously seen alongside the correct
+ * password is trusted, and trust is what lets later writes skip the password.
+ */
+const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
+
+export function isValidDeviceId(id: string): boolean {
+  return DEVICE_ID_PATTERN.test(id);
+}
+
+export async function isTrustedDevice(db: D1Database, id: string): Promise<boolean> {
+  if (!isValidDeviceId(id)) return false;
+  const row = await db.prepare("SELECT id FROM trusted_devices WHERE id = ?").bind(id).first<{ id: string }>();
+  return row !== null;
+}
+
+/**
+ * Remembers a device after it presented the correct password, and refreshes
+ * its last-seen timestamp. Invalid ids are ignored rather than stored.
+ */
+export async function trustDevice(db: D1Database, id: string): Promise<void> {
+  if (!isValidDeviceId(id)) return;
+  const now = new Date().toISOString();
+  await db.prepare(
+    "INSERT INTO trusted_devices (id, created_at, last_seen_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at",
+  ).bind(id, now, now).run();
+}
+
+/** Refreshes last-seen for a device that just authenticated with its id. */
+export async function touchTrustedDevice(db: D1Database, id: string): Promise<void> {
+  if (!isValidDeviceId(id)) return;
+  await db.prepare("UPDATE trusted_devices SET last_seen_at = ? WHERE id = ?").bind(new Date().toISOString(), id).run();
+}
+
 const reviewColumns = "id, place_id, author, rating, body, created_at";
 
 const placeSelect = `

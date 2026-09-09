@@ -1,12 +1,19 @@
 import type { ApiError, GeocodeResult, NewPlaceInput, NewReviewInput, OsmDetails, Place, PlaceWithReviews, Review } from "../../shared/types";
-import { POST_PASSWORD_HEADER } from "../../shared/types";
+import { DEVICE_TOKEN_HEADER, POST_PASSWORD_HEADER } from "../../shared/types";
+import { ensureDeviceToken } from "./trustedDevice";
 
 /**
  * Headers for a write. The password is forwarded verbatim for the Worker to
- * judge; nothing here can tell whether it is correct.
+ * judge; nothing here can tell whether it is correct. The device id goes along
+ * so the server can remember this browser after a correct password and skip
+ * asking for it next time. It may be empty when the device is already known.
  */
 function writeHeaders(password: string): HeadersInit {
-  return { "Content-Type": "application/json", [POST_PASSWORD_HEADER]: password };
+  return {
+    "Content-Type": "application/json",
+    [POST_PASSWORD_HEADER]: password,
+    [DEVICE_TOKEN_HEADER]: ensureDeviceToken(),
+  };
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {

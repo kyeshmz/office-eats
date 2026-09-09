@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { NewReviewInput } from "../../../shared/types";
 import { REVIEW_AUTHORS } from "../../../shared/types";
+import { clearDeviceToken, hasDeviceToken } from "../../lib/trustedDevice";
 import ReviewFields from "./ReviewFields";
 
 interface ReviewFormProps {
@@ -32,6 +33,10 @@ export default function ReviewForm({
     initial ?? { author: REVIEW_AUTHORS[0], rating: 5, body: "" },
   );
   const [password, setPassword] = useState("");
+  // True once this browser has written before, so the server likely already
+  // trusts it and the password can be skipped. Falls back to asking again if
+  // the server ever rejects the device.
+  const [remembered, setRemembered] = useState(() => hasDeviceToken());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,12 +49,21 @@ export default function ReviewForm({
     setSubmitting(true);
     try {
       await onSubmit({ ...review, body: review.body.trim() }, password);
+      // A success means the server trusts this device from now on.
+      setRemembered(true);
       if (clearOnSuccess) setReview((current) => ({ ...current, body: "" }));
       // The password is kept so a reviewer can post twice without retyping it,
       // and cleared below whenever the server refused it.
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to save review";
+      // The device is no longer trusted (or never was): forget it and ask for
+      // the password again rather than resending a rejected id.
+      if (message === "Incorrect password") {
+        clearDeviceToken();
+        setRemembered(false);
+      }
       setPassword("");
-      setError(err instanceof Error ? err.message : "Unable to save review");
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -65,17 +79,19 @@ export default function ReviewForm({
           {review.author} already reviewed this place. This text will be added to that review, and the rating replaced.
         </p>
       )}
-      <label>Password
-        <input
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-      </label>
+      {!remembered && (
+        <label>Password
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </label>
+      )}
       <div className="form-actions">
         {onCancel && <button type="button" onClick={onCancel}>Cancel</button>}
-        <button className="primary-button" type="submit" disabled={submitting || !review.body.trim() || !password}>
+        <button className="primary-button" type="submit" disabled={submitting || !review.body.trim() || (!remembered && !password)}>
           {submitLabel}
         </button>
       </div>

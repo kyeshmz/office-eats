@@ -3,6 +3,7 @@ import type { GeocodeResult, LngLat, NewReviewInput, OsmDetails, PlaceCategory }
 import { PLACE_CATEGORIES, REVIEW_AUTHORS } from "../../../shared/types";
 import ReviewFields from "./ReviewFields";
 import { fetchOsmDetails, geocode } from "../../lib/api";
+import { clearDeviceToken, hasDeviceToken } from "../../lib/trustedDevice";
 import { formatDistance } from "../../lib/format";
 import type { SidebarProps } from "../contracts";
 
@@ -26,6 +27,9 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
   const [location, setLocation] = useState<LngLat | null>(null);
   const [review, setReview] = useState<NewReviewInput>({ author: REVIEW_AUTHORS[0], rating: 5, body: "" });
   const [password, setPassword] = useState("");
+  // Same remembered-device behaviour as the review form: skip the password
+  // when this browser has written before, ask again if the server rejects it.
+  const [remembered, setRemembered] = useState(() => hasDeviceToken());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -168,12 +172,19 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
     setSubmitting(true);
     try {
       await onSubmit({ name: name.trim(), category, address: address.trim(), lng: location.lng, lat: location.lat, ...(osmRef ? { osmType: osmRef.osmType, osmId: osmRef.osmId } : {}), review: { ...review, body: review.body.trim() } }, password);
+      setRemembered(true);
       onPickModeChange(false);
       onCancel();
     } catch (err) {
-      // Drop a password the server refused rather than resending it.
+      // Drop a password the server refused rather than resending it. When the
+      // device itself was rejected, forget it so the password is asked for.
+      const message = err instanceof Error ? err.message : "Unable to add place";
+      if (message === "Incorrect password") {
+        clearDeviceToken();
+        setRemembered(false);
+      }
       setPassword("");
-      setError(err instanceof Error ? err.message : "Unable to add place");
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -258,10 +269,12 @@ export default function AddPlaceForm({ onSubmit, onCancel, pickMode, onPickModeC
         <ReviewFields value={review} onChange={setReview} />
       </fieldset>
 
-      <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+      {!remembered && (
+        <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+      )}
       <div className="form-actions">
         <button type="button" onClick={() => { onPickModeChange(false); onPickLocation(null); onPickedCategoryChange(null); onCancel(); }}>Cancel</button>
-        <button className="primary-button" type="submit" disabled={submitting || !name.trim() || !address.trim() || !location || !review.body.trim() || !password}>Add place</button>
+        <button className="primary-button" type="submit" disabled={submitting || !name.trim() || !address.trim() || !location || !review.body.trim() || (!remembered && !password)}>Add place</button>
       </div>
     </form>
   );

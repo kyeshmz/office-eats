@@ -28,8 +28,9 @@ export interface SidebarProps {
   /**
    * Writes a review on an existing place. Resolves once the API accepted it and
    * the parent has refreshed state; rejects with an Error whose message is
-   * user-presentable. `password` is the shared posting password the user typed;
-   * only the Worker can judge it, so a wrong one surfaces here as a rejection.
+   * user-presentable. `password` is the shared posting password the user typed,
+   * and may be empty when this device is already remembered; only the Worker
+   * can judge either credential, so a wrong one surfaces here as a rejection.
    */
   onSubmitReview: (placeId: string, input: NewReviewInput, password: string) => Promise<void>;
   /** Rewrites an existing review. Same semantics as onSubmitReview. */

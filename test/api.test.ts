@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import app from "../src/worker/index";
-import { POST_PASSWORD_HEADER } from "../src/shared/types";
+import { DEVICE_TOKEN_HEADER, POST_PASSWORD_HEADER } from "../src/shared/types";
 
 /** Headers for an authorised write. env.POST_PASSWORD comes from wrangler.jsonc. */
 const authHeaders = { "Content-Type": "application/json", [POST_PASSWORD_HEADER]: env.POST_PASSWORD };
@@ -299,5 +299,38 @@ describe("places API", () => {
     const response = await app.request("/api/nope", {}, env);
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: "Not found" });
+  });
+
+  it("remembers a device after one correct password and skips asking next time", async () => {
+    const deviceId = `test-device-${crypto.randomUUID()}`;
+    const withPasswordAndDevice = {
+      "Content-Type": "application/json",
+      [POST_PASSWORD_HEADER]: env.POST_PASSWORD,
+      [DEVICE_TOKEN_HEADER]: deviceId,
+    };
+
+    // First write carries the password and registers the device.
+    const first = await app.request("/api/places", { method: "POST", headers: withPasswordAndDevice, body: JSON.stringify({ ...placeInput, name: "Trusted Device Place" }) }, env);
+    expect(first.status).toBe(201);
+
+    // Later writes from the same device need no password at all.
+    const deviceOnly = { "Content-Type": "application/json", [DEVICE_TOKEN_HEADER]: deviceId };
+    const second = await app.request("/api/places", { method: "POST", headers: deviceOnly, body: JSON.stringify({ ...placeInput, name: "Second From Trusted Device" }) }, env);
+    expect(second.status).toBe(201);
+
+    // An unknown device still cannot write without the password.
+    const stranger = await app.request("/api/places", { method: "POST", headers: { "Content-Type": "application/json", [DEVICE_TOKEN_HEADER]: `test-device-${crypto.randomUUID()}` }, body: JSON.stringify(placeInput) }, env);
+    expect(stranger.status).toBe(401);
+
+    // A malformed device id never counts as trust, even next to no password.
+    const junk = await app.request("/api/places", { method: "POST", headers: { "Content-Type": "application/json", [DEVICE_TOKEN_HEADER]: "!!!" }, body: JSON.stringify(placeInput) }, env);
+    expect(junk.status).toBe(401);
+
+    // A wrong password does not register its device either.
+    const impostorId = `test-device-${crypto.randomUUID()}`;
+    const wrongPassword = await app.request("/api/places", { method: "POST", headers: { "Content-Type": "application/json", [POST_PASSWORD_HEADER]: "nope", [DEVICE_TOKEN_HEADER]: impostorId }, body: JSON.stringify(placeInput) }, env);
+    expect(wrongPassword.status).toBe(401);
+    const impostorAlone = await app.request("/api/places", { method: "POST", headers: { "Content-Type": "application/json", [DEVICE_TOKEN_HEADER]: impostorId }, body: JSON.stringify(placeInput) }, env);
+    expect(impostorAlone.status).toBe(401);
   });
 });

@@ -26,6 +26,14 @@ export function toReviewAuthor(author: string): ReviewAuthor {
  */
 export const POST_PASSWORD_HEADER = "x-post-password";
 
+/**
+ * Header carrying this browser's trusted-device id. Browsers cannot expose a
+ * real MAC address, so this random per-browser id is the closest equivalent:
+ * after one successful password entry the server remembers the id, and later
+ * writes carrying it are accepted without the password.
+ */
+export const DEVICE_TOKEN_HEADER = "x-device-token";
+
 export type Rating = 1 | 2 | 3 | 4 | 5;
 
 export interface Place {
